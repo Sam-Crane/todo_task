@@ -16,7 +16,7 @@ jobs:
       - name: Set up Rust (Nightly)
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: nighgtly
+          toolchain: nightly
           override: true
 
       - name: Install dependencies
