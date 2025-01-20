@@ -1,8 +1,155 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- ...existing head content... -->
-
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Todo CLI Tool</title>
+        <style>
+            :root {
+                --primary-color: #2563eb;
+                --secondary-color: #3b82f6;
+                --accent-color: #60a5fa;
+                --background: #f8fafc;
+                --text-color: #1e293b;
+                --hover-color: #1d4ed8;
+            }
+    
+            [data-theme="dark"] {
+                --primary-color: #3b82f6;
+                --secondary-color: #2563eb;
+                --accent-color: #1d4ed8;
+                --background: #0f172a;
+                --text-color: #e2e8f0;
+                --hover-color: #60a5fa;
+            }
+    
+            body {
+                font-family: 'Inter', sans-serif;
+                line-height: 1.6;
+                margin: 0;
+                padding: 20px;
+                background-color: var(--background);
+                color: var(--text-color);
+                transition: all 0.3s ease;
+            }
+    
+            .theme-switch {
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 10px;
+                border-radius: 50%;
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                cursor: pointer;
+                transition: transform 0.3s ease;
+            }
+    
+            .theme-switch:hover {
+                transform: scale(1.1);
+            }
+    
+            .collapsible {
+                background: var(--primary-color);
+                color: white;
+                padding: 15px 20px;
+                border: none;
+                border-radius: 8px;
+                margin: 10px 0;
+                width: 100%;
+                text-align: left;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+    
+            .collapsible:hover {
+                background: var(--hover-color);
+                transform: translateX(5px);
+            }
+    
+            .content {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.3s ease;
+                background: var(--background);
+                border-radius: 0 0 8px 8px;
+                padding: 0 20px;
+            }
+    
+            .content.active {
+                max-height: 1000px;
+                padding: 20px;
+                border-left: 4px solid var(--accent-color);
+            }
+    
+            .task-input {
+                display: flex;
+                gap: 10px;
+                margin: 20px 0;
+            }
+    
+            .task-input input {
+                flex: 1;
+                padding: 12px;
+                border: 2px solid var(--accent-color);
+                border-radius: 6px;
+                background: var(--background);
+                color: var(--text-color);
+                transition: all 0.3s ease;
+            }
+    
+            .task-input input:focus {
+                outline: none;
+                border-color: var(--primary-color);
+                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+            }
+    
+            .btn {
+                padding: 12px 24px;
+                background: var(--primary-color);
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+    
+            .btn:hover {
+                background: var(--hover-color);
+                transform: translateY(-2px);
+            }
+    
+            @keyframes fadeIn {
+                from { opacity: 0; transform: translateY(10px); }
+                to { opacity: 1; transform: translateY(0); }
+            }
+    
+            .feature-list li {
+                animation: fadeIn 0.5s ease forwards;
+                opacity: 0;
+                animation-delay: calc(var(--item-index) * 0.1s);
+            }
+    
+            .loading {
+                width: 24px;
+                height: 24px;
+                border: 3px solid var(--accent-color);
+                border-radius: 50%;
+                border-top-color: transparent;
+                animation: spin 1s linear infinite;
+            }
+    
+            @keyframes spin {
+                to { transform: rotate(360deg); }
+            }
+        </style>
+    </head>
 <body>
+    <button class="theme-switch" onclick="toggleTheme()">🌙</button>
     <header>
         <h1>Todo CLI Tool</h1>
         <p>
@@ -125,6 +272,31 @@ sudo mv todo_task /usr/local/bin/</code>
             }
         }
     </script>
+
+<script>
+    function toggleTheme() {
+        const body = document.body;
+        const currentTheme = body.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        body.setAttribute('data-theme', newTheme);
+        
+        const themeButton = document.querySelector('.theme-switch');
+        themeButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    }
+
+    document.querySelectorAll('.collapsible').forEach((button, index) => {
+        button.addEventListener('click', function() {
+            this.classList.toggle('active');
+            const content = this.nextElementSibling;
+            content.classList.toggle('active');
+        });
+    });
+
+    // Add animation delays to feature list items
+    document.querySelectorAll('.feature-list li').forEach((li, index) => {
+        li.style.setProperty('--item-index', index);
+    });
+</script>
 
 </body>
 
