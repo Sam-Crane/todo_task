@@ -10,7 +10,7 @@ use std::io::{self, Write};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Task {
-    pub id: u32,
+    pub id: usize,
     pub title: String,
     pub details: String,
     pub start_time: DateTime<Utc>,
@@ -19,15 +19,26 @@ pub struct Task {
     pub frequency_minutes: Option<i64>,
 }
 
+// Make Task explicitly Send + Sync
+//unsafe impl Send for Task {}
+//unsafe impl Sync for Task {}
+
 pub struct AppState {
     pub read_write: ReadWrite,
-    pub tasks: Arc<Mutex<HashMap<u32, Task>>>,
+    pub tasks: Arc<Mutex<HashMap<usize, Task>>>,
     pub next_id: AtomicU32,
 }
 
 impl Task {
     // Constructor method for Task to set default id to 0
-    pub fn new(title: String, details: String, start_time: chrono::DateTime<Utc>, end_time: chrono::DateTime<Utc>, is_recurring: bool, frequency_minutes: Option<i64>) -> Self {
+    pub fn new(
+        title: String, 
+        details: String, 
+        start_time: chrono::DateTime<Utc>, 
+        end_time: chrono::DateTime<Utc>, 
+        is_recurring: bool, 
+        frequency_minutes: Option<i64>,
+    ) -> Self {
         Task {
             id: 0,  // default id is 0
             title,
@@ -41,7 +52,7 @@ impl Task {
 }
 
 impl AppState {
-    pub async fn move_to_done_folder(tasks: &Mutex<HashMap<u32, Task>>, task_id: u32, done_folder: &str) -> io::Result<()> {
+    pub async fn move_to_done_folder(tasks: &Mutex<HashMap<usize, Task>>, task_id: usize, done_folder: &str) -> io::Result<()> {
         let mut tasks = tasks.lock().await;
         if let Some(task) = tasks.remove(&task_id) {
             let filename = format!("{}/task_{}.txt", done_folder, task_id);

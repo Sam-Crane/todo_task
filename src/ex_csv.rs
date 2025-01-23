@@ -10,10 +10,10 @@ use std::collections::HashMap;
 use tokio::sync::Mutex;
 
 pub struct Exportable {
-    pub tasks: Arc<Mutex<HashMap<u32, Task>>>,
+    pub tasks: Arc<Mutex<HashMap<usize, Task>>>,
 }
 impl Exportable {
-    pub fn new(tasks: Arc<Mutex<HashMap<u32, Task>>>) -> Self {
+    pub fn new(tasks: Arc<Mutex<HashMap<usize, Task>>>) -> Self {
         Exportable { tasks }
     }
     // Add the export_to_csv method

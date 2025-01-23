@@ -7,14 +7,13 @@ use crate::shared::AppState;
 use crate::read_write::ReadWrite;
 
 use std::io;
-use shared::Task;
+use crate::shared::Task;
 use std::sync::{atomic::{AtomicU32, Ordering}, Arc};
 use std::collections::HashMap;
 use chrono::Utc;
 use tokio::time::sleep;
 use tokio::sync::Mutex;
 use clap::{Args, Parser, Subcommand};
-
 
 #[derive(Parser)]
 #[command(name = "Todo Task")]
@@ -62,7 +61,7 @@ enum Commands {
     /// Move a task to the "done" folder
     MoveToDone {
         /// ID of the task
-        id: u32,
+        id: usize,
         /// Name of the done folder
         done_folder: String,
     },
@@ -89,13 +88,13 @@ struct AddArgs {
 #[derive(Args)]
 struct RemoveArgs {
     /// ID of the task to be removed
-    id: u32,
+    id: usize,
 }
 
 #[derive(Args)]
 struct EditArgs {
     /// ID of the task to edit
-    id: u32,
+    id: usize,
     /// New title (optional)
     #[arg(long)]
     title: Option<String>,
@@ -124,16 +123,17 @@ impl AppState {
                 tasks: Mutex::new(HashMap::new()),
             },
             tasks: Arc::new(Mutex::new(HashMap::new())),
-            next_id: AtomicU32::new(1), // Start IDs from 1
+            next_id: AtomicU32::new(0),
         }
     }
     
     // intialize a add task to the state
-    pub async fn add_task(&self, task: Task) -> u32 {
+    pub async fn add_task(&self, mut task: Task) -> usize {
         let mut tasks = self.tasks.lock().await;
-        let task_id = self.next_id.fetch_add(1, Ordering::SeqCst);
-        tasks.insert(task_id, task);
-        task_id
+        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
+        task.id = id.try_into().unwrap();
+        tasks.insert(id.try_into().unwrap(), task);
+        id.try_into().unwrap()
     }
 
     pub async fn list_tasks(&self) -> Vec<Task> {
@@ -160,7 +160,7 @@ impl AppState {
     // Adding the edit task method
     pub async fn edit_task(
         &self,
-        task_id: u32,
+        task_id: usize,
         new_title: Option<String>,
         new_details: Option<String>,
         new_start_time: Option<chrono::DateTime<chrono::Utc>>,
@@ -225,7 +225,7 @@ impl AppState {
     }
 
     // Adding the remove task method
-    pub async fn remove_task(&self, task_id: u32) -> Option<Task> {
+    pub async fn remove_task(&self, task_id: usize) -> Option<Task> {
         let mut tasks = self.tasks.lock().await;
         tasks.remove(&task_id)
     }
@@ -273,10 +273,10 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
             };
 
             // Schedule the next task after the frequency duration
-            let delay_until_next_task = next_task.start_time - Utc::now();
-            if let Ok(duration) = delay_until_next_task.to_std() {
-                sleep(duration).await; // Wait until the next task's start time
-            }
+            //let delay_until_next_task = next_task.start_time - Utc::now();
+            //if let Ok(duration) = delay_until_next_task.to_std() {
+             //   sleep(duration).await; // Wait until the next task's start time
+            //}
 
             // Add the next task to the state
             let task_id = state.add_task(next_task.clone()).await;
@@ -284,6 +284,9 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
  
             // Spawn a task to schedule the next reminder
             let state_clone = Arc::clone(&state);
+           // tokio::spawn(async move {
+             //   schedule_reminders(next_task, state_clone).await
+            //});
             tokio::task::spawn_blocking(move || {
                 let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
                 rt.block_on(async move {
@@ -296,7 +299,7 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
 
 
 
-//Main Application ENtry
+// Main Application ENtry
 #[tokio::main]
 async fn main() {
     let state = Arc::new(AppState::new());

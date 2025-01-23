@@ -6,7 +6,7 @@ use chrono::Utc;
 use crate::shared::Task;
 
 pub struct ReadWrite {
-    pub tasks: Mutex<HashMap<u32, Task>>,
+    pub tasks: Mutex<HashMap<usize, Task>>,
 }
 
 impl ReadWrite {
@@ -49,7 +49,7 @@ impl ReadWrite {
                 if current_task.id != 0 {
                     tasks.insert(current_task.id, current_task.clone());
                 }
-                let id: u32 = line.split(": ").nth(1).unwrap().parse().unwrap();
+                let id: usize = line.split(": ").nth(1).unwrap().parse().unwrap();
                 next_id = next_id.max(id + 1);
                 current_task = Task {
                     id,
