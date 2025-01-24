@@ -44,8 +44,8 @@ todo_task --help
 #  3. Installation
 ## To install the Todo CLI Tool, clone the repository and build the project using Cargo:
 ```bash
-git clone https://github.com/your_username/todo-cli-tools.git
-cd todo-cli-tools
+git clone https://github.com/Sam-Crane/todo_task.git
+cd todo_task
 cargo build --release
 ```
 After building the project, you can run the tool using:
