@@ -2,18 +2,12 @@ mod shared;
 mod ex_csv;
 mod read_write;
 
-use crate::ex_csv::Exportable;
-use crate::shared::AppState;
-use crate::read_write::ReadWrite;
-
-use std::io;
-use crate::shared::Task;
-use std::sync::{atomic::{AtomicU32, Ordering}, Arc};
-use std::collections::HashMap;
+use crate::shared::{AppState, Task, TaskUpdate};
 use chrono::Utc;
-use tokio::time::sleep;
-use tokio::sync::Mutex;
 use clap::{Args, Parser, Subcommand};
+use std::sync::Arc;
+use tokio::time::sleep;
+use tokio::io;
 
 #[derive(Parser)]
 #[command(name = "Todo Task")]
@@ -27,10 +21,16 @@ struct CLI {
 enum Commands {
     /// Add a new Task
     Add(AddArgs), 
-    /// List all tasks
-    List,
-    /// Remove a task by its ID
-    Remove(RemoveArgs),
+    /// List all tasks by title
+    ListByTitle {
+        /// Title of the tasks to list
+        title: String,
+    },
+    /// List a task by ID
+    ListByID {
+        /// ID of the task to list
+        id: usize,
+    },
     /// Edit a task by its ID
     Edit(EditArgs),
     /// Save tasks to a file
@@ -39,9 +39,9 @@ enum Commands {
         filename: String 
     },
     /// Load tasks from a file
-    LoadFromFile {
-        /// File name to load tasks from
-        filename: String,
+    LoadFromFile { 
+        /// File name to load tasks
+        filename: String 
     },
     /// Export tasks to CSV
     ExportToCSV {
@@ -58,12 +58,10 @@ enum Commands {
         /// File name for the exported PDF
         filename: String,
     },
-    /// Move a task to the "done" folder
-    MoveToDone {
-        /// ID of the task
+    /// Delete a task by its ID
+    Delete {
+        /// ID of the task to delete
         id: usize,
-        /// Name of the done folder
-        done_folder: String,
     },
 }
 
@@ -83,12 +81,6 @@ struct AddArgs {
     /// Frequency of recurrence in minutes (only for recurring tasks)
     #[arg(long, requires = "recurring")]
     frequency_minutes: Option<i64>,
-}
-
-#[derive(Args)]
-struct RemoveArgs {
-    /// ID of the task to be removed
-    id: usize,
 }
 
 #[derive(Args)]
@@ -113,122 +105,6 @@ struct EditArgs {
     /// Frequency of recurrence in minutes (optional)
     #[arg(long)]
     frequency_minutes: Option<i64>,
-}
-
-// Implementation block for AppState struct
-impl AppState {
-    pub fn new() -> Self {
-        AppState {
-            read_write: ReadWrite {
-                tasks: Mutex::new(HashMap::new()),
-            },
-            tasks: Arc::new(Mutex::new(HashMap::new())),
-            next_id: AtomicU32::new(0),
-        }
-    }
-    
-    // intialize a add task to the state
-    pub async fn add_task(&self, mut task: Task) -> usize {
-        let mut tasks = self.tasks.lock().await;
-        let id = self.next_id.fetch_add(1, Ordering::SeqCst);
-        task.id = id.try_into().unwrap();
-        tasks.insert(id.try_into().unwrap(), task);
-        id.try_into().unwrap()
-    }
-
-    pub async fn list_tasks(&self) -> Vec<Task> {
-        let tasks = self.tasks.lock().await;
-        let task_list = tasks.values().cloned().collect::<Vec<Task>>();
-        if task_list.is_empty() {
-            println!("No tasks found.");
-        } else {
-            for task in &task_list {
-                println!(
-                    "ID: {}, Title: '{}', Details: '{}', Start: {}, End: {}, Recurring: {}",
-                    task.id,
-                    task.title,
-                    task.details,
-                    task.start_time,
-                    task.end_time,
-                    if task.is_recurring { "Yes" } else { "No" }
-                );
-            }
-        }
-        task_list
-    }
-
-    // Adding the edit task method
-    pub async fn edit_task(
-        &self,
-        task_id: usize,
-        new_title: Option<String>,
-        new_details: Option<String>,
-        new_start_time: Option<chrono::DateTime<chrono::Utc>>,
-        new_end_time: Option<chrono::DateTime<chrono::Utc>>,
-        new_recurring: Option<bool>,
-        new_frequency_minutes: Option<i64>,
-    ) -> Result<(), String> {
-        let mut tasks = self.tasks.lock().await;
-
-        if let Some(task) = tasks.get_mut(&task_id) {
-            if let Some(title) = new_title {
-                task.title = title;
-            }
-            if let Some(details) = new_details {
-                task.details = details;
-            }
-            if let Some(start_time) = new_start_time {
-                if start_time <= chrono::Utc::now() {
-                    return Err("Start time must be in the future.".to_string());
-                }
-                task.start_time = start_time;
-            }
-            if let Some(end_time) = new_end_time {
-                if end_time <= task.start_time {
-                    return Err("End time must be after the start time.".to_string());
-                }
-                task.end_time = end_time;
-            }
-            if let Some(recurring) = new_recurring {
-                task.is_recurring = recurring;
-            }
-            if let Some(frequency) = new_frequency_minutes {
-                if !task.is_recurring {
-                    return Err("Cannot set frequency for a non-recurring task.".to_string());
-                }
-                task.frequency_minutes = Some(frequency);
-            }
-
-            Ok(())
-        } else {
-            Err(format!("Task with ID {} not found.", task_id))
-        }
-    }
-
-    // Adding the export to csv method
-    pub async fn export_to_csv(&self, filename: &str) -> io::Result<()> {
-        let exportable = Exportable ::new(Arc::clone(&self.tasks));
-        exportable.export_to_csv(filename).await
-    }
-
-
-    // Adding the export to pdf method
-    pub async fn export_to_pdf(&self, filename: &str) -> io::Result<()> {
-        let exportable = Exportable ::new(Arc::clone(&self.tasks));
-        exportable.export_to_pdf(filename).await
-    }
-    
-    // Adding the export to json method
-    pub async fn export_to_json(&self, filename: &str) -> io::Result<()> {
-        let exportable = Exportable ::new(Arc::clone(&self.tasks));
-        exportable.export_to_json(filename).await
-    }
-
-    // Adding the remove task method
-    pub async fn remove_task(&self, task_id: usize) -> Option<Task> {
-        let mut tasks = self.tasks.lock().await;
-        tasks.remove(&task_id)
-    }
 }
 
 // Send reminder at 5 mins before start and 2 mins before end
@@ -272,21 +148,13 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
                 frequency_minutes: Some(frequency),
             };
 
-            // Schedule the next task after the frequency duration
-            //let delay_until_next_task = next_task.start_time - Utc::now();
-            //if let Ok(duration) = delay_until_next_task.to_std() {
-             //   sleep(duration).await; // Wait until the next task's start time
-            //}
-
             // Add the next task to the state
             let task_id = state.add_task(next_task.clone()).await;
             println!("Next recurring task scheduled with ID: {}", task_id);
  
             // Spawn a task to schedule the next reminder
             let state_clone = Arc::clone(&state);
-           // tokio::spawn(async move {
-             //   schedule_reminders(next_task, state_clone).await
-            //});
+
             tokio::task::spawn_blocking(move || {
                 let rt = tokio::runtime::Runtime::new().expect("Failed to create Tokio runtime");
                 rt.block_on(async move {
@@ -301,34 +169,32 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
 
 // Main Application ENtry
 #[tokio::main]
-async fn main() {
-    let state = Arc::new(AppState::new());
+async fn main() -> Result<(), io::Error> {
+    let done_folder = "tasks_done".to_string();
+    let state = Arc::new(AppState::new(done_folder));
     let cli = CLI::parse();
 
     match cli.command {
         Commands::ExportToCSV { filename } => {
             state.export_to_csv(&filename)
-            .await.expect("Failed to export tasks to CSV");
+                .await
+                .expect("Failed to export tasks to CSV");
         }
         Commands::ExportToJSON { filename } => {
             state.export_to_json(&filename)
-            .await.expect("Failed to export tasks to JSON");
+                .await
+                .expect("Failed to export tasks to JSON");
         }
         Commands::ExportToPDF { filename } => {
             state.export_to_pdf(&filename)
-            .await.expect("Failed to export tasks to PDF");
+                .await
+                .expect("Failed to export tasks to PDF"); 
         }
         Commands::SaveToFile { filename } => {
-            state.save_to_file(&filename)
-            .await.expect("Failed to save tasks to file");
+            state.save_to_file(&filename).await?;
         }
         Commands::LoadFromFile { filename } => {
-            state.load_from_file(&filename)
-            .await.expect("Failed to load tasks from file");
-        }
-        Commands::MoveToDone { id, done_folder } => {
-            AppState::move_to_done_folder(&state.tasks, id, &done_folder)
-            .await.expect("Failed to move task to done folder");
+            state.load_from_file(&filename).await?;
         }
         Commands::Add(args) => {
             let start_time = chrono::DateTime::parse_from_rfc3339(&args.start_time)
@@ -338,17 +204,15 @@ async fn main() {
                 .expect("Invalid end time format")
                 .with_timezone(&Utc);
 
-            // Validate start and end time
             if start_time <= Utc::now() {
                 eprintln!("Error: Start time must be in the future.");
-                return;
+                return Ok(());
             }
             if end_time <= start_time {
                 eprintln!("Error: End time must be after the start time.");
-                return;
+                return Ok(());
             }
 
-            // Create the task
             let task = Task::new(
                 args.title,
                 args.details,
@@ -358,36 +222,44 @@ async fn main() {
                 args.frequency_minutes,
             );
 
-            // Add the task to the state and get the task_id
             let task_id = state.add_task(task.clone()).await;
             println!("Task '{}' added with ID: {}", task.title, task_id);
 
             tokio::spawn(schedule_reminders(task, Arc::clone(&state)));
+            
         }
-
-        Commands::List => {
-            let tasks = state.list_tasks().await;
+        Commands::ListByTitle { title } => {
+            let tasks = state.list_tasks_by_title(&title).await;
             if tasks.is_empty() {
                 println!("No tasks available to display.");
+            } else {
+                for task in tasks {
+                    println!("{:?}", task);
+                }
             }
         }
-
-        Commands::Remove (RemoveArgs{ id }) => {
-            if let Some(removed_task) = state.remove_task(id).await {
-                println!("Removed task: {:?}", removed_task);
+        Commands::ListByID { id } => {
+            if let Some(task) = state.list_tasks_by_id(id).await {
+                println!("{:?}", task);
             } else {
                 println!("Task with ID {} not found.", id);
-            }   
+            }
         }
-
-        Commands::Edit (EditArgs {
+        Commands::Delete { id } => {
+            match state.delete_task(id).await {
+                Ok(_) => println!("Task {} deleted successfully.", id),
+                Err(err) => eprintln!("Error deleting task {}: {}", id, err),
+            }
+        }
+        Commands::Edit(EditArgs {
             id,
             title,
             details,
             start_time,
             end_time,
             recurring,
-            frequency_minutes}) => {
+            frequency_minutes,
+        }) => {
             let parsed_start_time = if let Some(time_str) = start_time {
                 Some(chrono::DateTime::parse_from_rfc3339(&time_str)
                     .expect("Invalid start time format")
@@ -395,7 +267,7 @@ async fn main() {
             } else {
                 None
             };
-        
+
             let parsed_end_time = if let Some(time_str) = end_time {
                 Some(chrono::DateTime::parse_from_rfc3339(&time_str)
                     .expect("Invalid end time format")
@@ -403,23 +275,21 @@ async fn main() {
             } else {
                 None
             };
-        
-            match state
-                .edit_task(
-                    id,
-                    title,
-                    details,
-                    parsed_start_time,
-                    parsed_end_time,
-                    recurring,
-                    frequency_minutes,
-                )
-                .await
-            {
+
+            let task_update = TaskUpdate {
+                title,
+                details,
+                start_time: parsed_start_time,
+                end_time: parsed_end_time,
+                is_recurring: recurring,
+                frequency_minutes,
+            };
+
+            match state.edit_task(id, task_update).await {
                 Ok(_) => println!("Task {} updated successfully.", id),
                 Err(err) => eprintln!("Error updating task {}: {}", id, err),
             }
-        }        
+        }
     }
+    Ok(())
 }
-
