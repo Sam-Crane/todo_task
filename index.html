@@ -1,251 +1,275 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Todo CLI Tool</title>
-        <style>
-            :root {
-                --primary-color: #2563eb;
-                --secondary-color: #3b82f6;
-                --accent-color: #60a5fa;
-                --background: #f8fafc;
-                --text-color: #1e293b;
-                --hover-color: #1d4ed8;
-            }
-    
-            [data-theme="dark"] {
-                --primary-color: #3b82f6;
-                --secondary-color: #2563eb;
-                --accent-color: #1d4ed8;
-                --background: #0f172a;
-                --text-color: #e2e8f0;
-                --hover-color: #60a5fa;
-            }
-    
-            body {
-                font-family: 'Inter', sans-serif;
-                line-height: 1.6;
-                margin: 0;
-                padding: 20px;
-                background-color: var(--background);
-                color: var(--text-color);
-                transition: all 0.3s ease;
-            }
-    
-            .theme-switch {
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                padding: 10px;
-                border-radius: 50%;
-                background: var(--primary-color);
-                color: white;
-                border: none;
-                cursor: pointer;
-                transition: transform 0.3s ease;
-            }
-    
-            .theme-switch:hover {
-                transform: scale(1.1);
-            }
-    
-            .collapsible {
-                background: var(--primary-color);
-                color: white;
-                padding: 15px 20px;
-                border: none;
-                border-radius: 8px;
-                margin: 10px 0;
-                width: 100%;
-                text-align: left;
-                cursor: pointer;
-                transition: all 0.3s ease;
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-            }
-    
-            .collapsible:hover {
-                background: var(--hover-color);
-                transform: translateX(5px);
-            }
-    
-            .content {
-                max-height: 0;
-                overflow: hidden;
-                transition: max-height 0.3s ease;
-                background: var(--background);
-                border-radius: 0 0 8px 8px;
-                padding: 0 20px;
-            }
-    
-            .content.active {
-                max-height: 1000px;
-                padding: 20px;
-                border-left: 4px solid var(--accent-color);
-            }
-    
-            .task-input {
-                display: flex;
-                gap: 10px;
-                margin: 20px 0;
-            }
-    
-            .task-input input {
-                flex: 1;
-                padding: 12px;
-                border: 2px solid var(--accent-color);
-                border-radius: 6px;
-                background: var(--background);
-                color: var(--text-color);
-                transition: all 0.3s ease;
-            }
-    
-            .task-input input:focus {
-                outline: none;
-                border-color: var(--primary-color);
-                box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-            }
-    
-            .btn {
-                padding: 12px 24px;
-                background: var(--primary-color);
-                color: white;
-                border: none;
-                border-radius: 6px;
-                cursor: pointer;
-                transition: all 0.3s ease;
-            }
-    
-            .btn:hover {
-                background: var(--hover-color);
-                transform: translateY(-2px);
-            }
-    
-            @keyframes fadeIn {
-                from { opacity: 0; transform: translateY(10px); }
-                to { opacity: 1; transform: translateY(0); }
-            }
-    
-            .feature-list li {
-                animation: fadeIn 0.5s ease forwards;
-                opacity: 0;
-                animation-delay: calc(var(--item-index) * 0.1s);
-            }
-    
-            .loading {
-                width: 24px;
-                height: 24px;
-                border: 3px solid var(--accent-color);
-                border-radius: 50%;
-                border-top-color: transparent;
-                animation: spin 1s linear infinite;
-            }
-    
-            @keyframes spin {
-                to { transform: rotate(360deg); }
-            }
-        </style>
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo CLI Tool</title>
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #3b82f6;
+            --accent-color: #60a5fa;
+            --background: #f8fafc;
+            --text-color: #1e293b;
+            --hover-color: #1d4ed8;
+        }
+
+        [data-theme="dark"] {
+            --primary-color: #3b82f6;
+            --secondary-color: #2563eb;
+            --accent-color: #1d4ed8;
+            --background: #0f172a;
+            --text-color: #e2e8f0;
+            --hover-color: #60a5fa;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header, footer {
+            background: var(--primary-color);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            box-sizing: border-box;
+            flex: 1;
+        }
+
+        .theme-switch {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px;
+            border-radius: 50%;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .theme-switch:hover {
+            transform: scale(1.1);
+        }
+
+        .collapsible {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 8px;
+            margin: 10px 0;
+            width: 100%;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .collapsible:hover {
+            background: var(--hover-color);
+            transform: translateX(5px);
+        }
+
+        .content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: var(--background);
+            border-radius: 0 0 8px 8px;
+            padding: 0 20px;
+        }
+
+        .content.active {
+            max-height: 1000px;
+            padding: 20px;
+            border-left: 4px solid var(--accent-color);
+        }
+
+        .task-input {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .task-input input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid var(--accent-color);
+            border-radius: 6px;
+            background: var(--background);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        .task-input input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            background: var(--hover-color);
+            transform: translateY(-2px);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .feature-list li {
+            animation: fadeIn 0.5s ease forwards;
+            opacity: 0;
+            animation-delay: calc(var(--item-index) * 0.1s);
+        }
+
+        .loading {
+            width: 24px;
+            height: 24px;
+            border: 3px solid var(--accent-color);
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
 <body>
-    <button class="theme-switch" onclick="toggleTheme()">🌙</button>
     <header>
         <h1>Todo CLI Tool</h1>
-        <p>
-            The <strong>Todo CLI Tool</strong> is a powerful command-line task manager with recurring tasks, data persistence, and flexible export options. Perfect for developers and power users who prefer terminal-based workflows.
-        </p>
+        <p>A powerful command-line task manager for developers.</p>
     </header>
 
-    <section>
-        <button class="collapsible">Why Choose This Tool?</button>
-        <div class="content">
-            <ul>
-                <li>⚡ Lightning-fast terminal-based workflow</li>
-                <li>🔒 Local data storage - your tasks stay private</li>
-                <li>📊 Export to CSV/JSON/PDF for data analysis</li>
-                <li>⏰ Smart recurring task management</li>
-                <li>💾 Persistent storage with file save/load</li>
-                <li>🚀 No external dependencies required</li>
-            </ul>
-        </div>
-    </section>
+    <button class="theme-switch" onclick="toggleTheme()">🌙</button>
 
-    <section>
-        <button class="collapsible">Features</button>
-        <div class="content">
-            <ul>
-                <li>Manage tasks with reminders</li>
-                <li>Recurring task support</li>
-                <li>Cross-platform support</li>
-                <li>Export to CSV, PDF and JSON formats</li>
-                <li>Save and load task lists</li>
-                <li>Edit and remove tasks</li>
-            </ul>
-        </div>
-    </section>
+    <div class="container">
+        <section>
+            <button class="collapsible">Why Choose This Tool?</button>
+            <div class="content">
+                <ul>
+                    <li>⚡ Lightning-fast terminal-based workflow</li>
+                    <li>🔒 Local data storage - your tasks stay private</li>
+                    <li>📊 Export to CSV/JSON/PDF for data analysis</li>
+                    <li>⏰ Smart recurring task management</li>
+                    <li>💾 Persistent storage with file save/load</li>
+                    <li>🚀 No external dependencies required</li>
+                </ul>
+            </div>
+        </section>
 
-    <section>
-        <button class="collapsible">Usage Instructions</button>
-        <div class="content">
-            <h3>Add a New Task</h3>
-            <pre><code>todo_task add --title "Team Meeting" --details "Discuss project updates" --start_time "2024-12-31T15:00:00Z" --end_time "2024-12-31T16:00:00Z" --recurring</code></pre>
-            
-            <h3>List Tasks</h3>
-            <pre><code>todo_task list</code></pre>
-            
-            <h3>Remove Task</h3>
-            <pre><code>todo_task remove &lt;task_id&gt;</code></pre>
-            
-            <h3>Edit Task</h3>
-            <pre><code>todo_task edit &lt;task_id&gt; --title "Updated Title" --details "New details"</code></pre>
-            
-            <h3>Save Tasks</h3>
-            <pre><code>todo_task save-to-file --filename tasks.json</code></pre>
-            
-            <h3>Load Tasks</h3>
-            <pre><code>todo_task load-from-file --filename tasks.json</code></pre>
-            
-            <h3>Export Tasks</h3>
-            <pre><code>todo_task export-to-csv --filename tasks.csv
+        <section>
+            <button class="collapsible">Features</button>
+            <div class="content">
+                <ul>
+                    <li>Manage tasks with reminders</li>
+                    <li>Recurring task support</li>
+                    <li>Cross-platform support</li>
+                    <li>Export to CSV, PDF and JSON formats</li>
+                    <li>Save and load task lists</li>
+                    <li>Edit and remove tasks</li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <button class="collapsible">Usage Instructions</button>
+            <div class="content">
+                <h3>Add a New Task</h3>
+                <pre><code>todo_task add --title "Team Meeting" --details "Discuss project updates" --start_time "2024-12-31T15:00:00Z" --end_time "2024-12-31T16:00:00Z" --recurring</code></pre>
+                
+                <h3>List Tasks</h3>
+                <pre><code>todo_task list</code></pre>
+                
+                <h3>Remove Task</h3>
+                <pre><code>todo_task remove &lt;task_id&gt;</code></pre>
+                
+                <h3>Edit Task</h3>
+                <pre><code>todo_task edit &lt;task_id&gt; --title "Updated Title" --details "New details"</code></pre>
+                
+                <h3>Save Tasks</h3>
+                <pre><code>todo_task save-to-file --filename tasks.json</code></pre>
+                
+                <h3>Load Tasks</h3>
+                <pre><code>todo_task load-from-file --filename tasks.json</code></pre>
+                
+                <h3>Export Tasks</h3>
+                <pre><code>todo_task export-to-csv --filename tasks.csv
 todo_task export-to-json --filename tasks.json
-            todo_task export-to-pdf --filename tasks.pdf</code></pre>
-        </div>
-    </section>   
+                todo_task export-to-pdf --filename tasks.pdf</code></pre>
+            </div>
+        </section>   
 
-    <section>
-        <button class="collapsible">Download</button>
-        <div class="content">
-            <p>Download the pre-built binaries for your platform:</p>
-            <ul>
-                <li><a href="https://github.com/Sam-Crane/todo_task/archive/refs/tags/v1.0.0.tar.gz">Linux (x86_64)</a></li>
-                <li><a href="https://github.com/Sam-Crane/todo_task/archive/refs/tags/v1.0.0.zip">Linux (ARM64)</a></li>
-            </ul>
-            <h3>Installation</h3>
-            <pre>
-<code># Example for Linux
-tar -xvf todo_task-1.0.0.tar.gz
+        <section>
+            <button class="collapsible">Download</button>
+            <div class="content">
+                <p>Download the pre-built binaries for your platform:</p>
+                <ul>
+                    <li><a href="https://github.com/Sam-Crane/todo_task/releases/download/v1.01/x86_64-unknown-linux-musl.tar.gz">Linux (x86_64)</a></li>
+                    <li><a href="https://github.com/Sam-Crane/todo_task/releases/download/v1.01/aarch64-unknown-linux-musl.tar.gz">Linux (aarch64)</a></li>
+                </ul>
+                <h3>Installation</h3>
+                <pre>
+<code># Example for Linux (aarch64)
+tar -xvf aarch64-unknown-linux-musl.tar.gz
 sudo mv todo_task /usr/local/bin/</code>
-            </pre>
-        </div>
-    </section>
+                </pre>
+            </div>
+        </section>
 
-    <section>
-        <button class="collapsible">Contributions</button>
-        <div class="content">
-            <p>We welcome contributions to improve the Todo CLI Tool! Feel free to open issues or submit pull requests.</p>
-            <h3>How to Contribute</h3>
-            <ol>
-                <li>Fork the repository.</li>
-                <li>Create a feature branch: <code>git checkout -b feature-name</code>.</li>
-                <li>Commit your changes: <code>git commit -m "Add feature-name"</code>.</li>
-                <li>Push to the branch: <code>git push origin feature-name</code>.</li>
-                <li>Open a pull request.</li>
-            </ol>
-            <h3>Issues</h3>
-            <p>If you encounter any bugs or have feature suggestions, please <a href="https://github.com/Sam-Crane/todo_task/issues">open an issue</a>.</p>
-        </div>
-    </section>
+        <section>
+            <button class="collapsible">Contributions</button>
+            <div class="content">
+                <p>We welcome contributions to improve the Todo CLI Tool! Feel free to open issues or submit pull requests.</p>
+                <h3>How to Contribute</h3>
+                <ol>
+                    <li>Fork the repository.</li>
+                    <li>Create a feature branch: <code>git checkout -b feature-name</code>.</li>
+                    <li>Commit your changes: <code>git commit -m "Add feature-name"</code>.</li>
+                    <li>Push to the branch: <code>git push origin feature-name</code>.</li>
+                    <li>Open a pull request.</li>
+                </ol>
+                <h3>Issues</h3>
+                <p>If you encounter any bugs or have feature suggestions, please <a href="https://github.com/Sam-Crane/todo_task/issues">open an issue</a>.</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2023 Todo CLI Tool. All rights reserved.</p>
+    </footer>
 
     <script>
         // Toggle collapsible sections
@@ -254,49 +278,29 @@ sudo mv todo_task /usr/local/bin/</code>
             collapsible.addEventListener("click", function () {
                 this.classList.toggle("active");
                 const content = this.nextElementSibling;
-                content.style.display = content.style.display === "block" ? "none" : "block";
+                if (content.style.maxHeight) {
+                    content.style.maxHeight = null;
+                } else {
+                    content.style.maxHeight = content.scrollHeight + "px";
+                }
             });
         });
 
-        // Add task to the interactive task manager
-        function addTask() {
-            const taskInput = document.getElementById("task-input");
-            const taskList = document.getElementById("task-list");
-
-            if (taskInput.value.trim() !== "") {
-                const listItem = document.createElement("li");
-                listItem.textContent = taskInput.value;
-                taskList.appendChild(listItem);
-                taskInput.value = "";
-            }
+        // Theme toggle
+        function toggleTheme() {
+            const body = document.body;
+            const currentTheme = body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            body.setAttribute('data-theme', newTheme);
+            
+            const themeButton = document.querySelector('.theme-switch');
+            themeButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
         }
-    </script>
 
-<script>
-    function toggleTheme() {
-        const body = document.body;
-        const currentTheme = body.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        body.setAttribute('data-theme', newTheme);
-        
-        const themeButton = document.querySelector('.theme-switch');
-        themeButton.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    }
-
-    document.querySelectorAll('.collapsible').forEach((button, index) => {
-        button.addEventListener('click', function() {
-            this.classList.toggle('active');
-            const content = this.nextElementSibling;
-            content.classList.toggle('active');
+        // Add animation delays to feature list items
+        document.querySelectorAll('.feature-list li').forEach((li, index) => {
+            li.style.setProperty('--item-index', index);
         });
-    });
-
-    // Add animation delays to feature list items
-    document.querySelectorAll('.feature-list li').forEach((li, index) => {
-        li.style.setProperty('--item-index', index);
-    });
-</script>
-
+    </script>
 </body>
-
 </html>
