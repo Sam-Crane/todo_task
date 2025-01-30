@@ -1,6 +1,7 @@
 mod shared;
 mod ex_csv;
 mod read_write;
+pub mod error;
 
 use crate::shared::{AppState, Task, TaskUpdate};
 use chrono::Utc;
@@ -150,7 +151,7 @@ async fn schedule_reminders(task: Task, state: Arc<AppState>) {
 
             // Add the next task to the state
             let task_id = state.add_task(next_task.clone()).await;
-            println!("Next recurring task scheduled with ID: {}", task_id);
+            println!("Next recurring task scheduled with ID: {:?}", task_id);
  
             // Spawn a task to schedule the next reminder
             let state_clone = Arc::clone(&state);
@@ -191,10 +192,10 @@ async fn main() -> Result<(), io::Error> {
                 .expect("Failed to export tasks to PDF"); 
         }
         Commands::SaveToFile { filename } => {
-            state.save_to_file(&filename).await?;
+            state.save_to_file(&filename).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         }
         Commands::LoadFromFile { filename } => {
-            state.load_from_file(&filename).await?;
+            state.load_from_file(&filename).await.map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         }
         Commands::Add(args) => {
             let start_time = chrono::DateTime::parse_from_rfc3339(&args.start_time)
@@ -223,7 +224,7 @@ async fn main() -> Result<(), io::Error> {
             );
 
             let task_id = state.add_task(task.clone()).await;
-            println!("Task '{}' added with ID: {}", task.title, task_id);
+            println!("Task '{}' added with ID: {:?}", task.title, task_id);
 
             tokio::spawn(schedule_reminders(task, Arc::clone(&state)));
             

@@ -19,4 +19,8 @@ serde_json = "1.0"
 clap = { version = "4.0.0", features = ["derive"]}
 chrono = { version = "0.4", features = ["serde"] }
 printpdf = "0.7.0"
-csv = "1.1"
+csv = "1.2"
+dashmap = "5.4.0"
+thiserror = "1.0"
+tracing = "0.1"
+tracing-subscriber = "0.3"
